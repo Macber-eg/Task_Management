@@ -1,0 +1,33 @@
+---
+title: "Workflows"
+description: "Choose project columns and map repository events to the right status."
+---
+
+Open **Settings → Projects**, select a project, and choose **Workflow**. You need permission to manage the project to change its columns.
+
+## Change the columns
+
+In **Columns**, add a stage, rename an existing one, choose its icon, or drag it into a different order. Start with the few stages your team actually uses, such as **To Do → In Progress → Review → Done**.
+
+Mark a column as a final state when tasks in it should count as complete. A column's name alone does not define completion.
+
+<Frame caption="Project workflow settings contain columns, custom fields, and integration automation.">
+  <img className="block dark:hidden" src="/images/product/workflow-light.png" alt="Project workflow settings contain columns, custom fields, and integration automation." />
+  <img className="hidden dark:block" src="/images/product/workflow-dark.png" alt="Project workflow settings contain columns, custom fields, and integration automation." />
+</Frame>
+
+Kaneo refuses to delete a column that still contains tasks. Move those tasks into another column first and check any automation rules that target it. Changes apply to the whole project, so let your teammates know before reorganizing an active board.
+
+## Add custom fields
+
+Use **Custom Fields** on the same page when tasks need another piece of structured information. Give each field a clear name and choose text, number, date, dropdown, or boolean. For a dropdown, define the available choices. Drag fields to change their order; task details show them under **Custom Fields**.
+
+## Move tasks automatically
+
+Under **Automation Rules**, choose a target column for each GitHub or Gitea event you want to use. For example, a branch push can move work to **In Progress**, and a merged pull request can move it to **Done**.
+
+Connect the repository first through [Integrations](/core/integrations/index). Test one event with a task whose branch name matches the integration's pattern, then confirm the task moves to the expected column.
+
+To change a mapping, select another column. Disconnect the repository integration if you want to stop using that connection entirely.
+
+Return to [Board and List](/core/functional/plan-and-execute-tasks) to work with the updated columns.
