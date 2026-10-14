@@ -1,0 +1,2 @@
+# PostgreSQL service (Railway plugin). PGDATA avoids init issues on mounted volumes.
+PGDATA=/var/lib/postgresql/data/pgdata

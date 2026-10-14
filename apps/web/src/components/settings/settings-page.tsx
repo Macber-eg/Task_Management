@@ -19,7 +19,7 @@ export function SettingsPage({
   return (
     <div
       className={cn(
-        "mx-auto w-full max-w-3xl space-y-10 px-4 py-8 sm:px-8 sm:py-10",
+        "mx-auto w-full max-w-3xl space-y-10 px-4 py-8 sm:px-8 sm:py-10 xl:max-w-none",
         className,
       )}
     >

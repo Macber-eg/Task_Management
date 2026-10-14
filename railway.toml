@@ -1,0 +1,25 @@
+# Default Kaneo service: build the bundled web + API image from this repo.
+# In Railway: New Project → Deploy from GitHub → select this repo.
+# Add a PostgreSQL plugin, then set variables from deploy/railway/variables.example.
+# Public networking: expose port 5173 and generate a domain.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.kaneo"
+watchPatterns = [
+  "apps/api/**",
+  "apps/web/**",
+  "packages/**",
+  "deploy/**",
+  "Dockerfile.kaneo",
+  "i18n/**",
+  "pnpm-lock.yaml",
+  "package.json",
+  "pnpm-workspace.yaml",
+]
+
+[deploy]
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

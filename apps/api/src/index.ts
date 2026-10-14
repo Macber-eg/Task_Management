@@ -227,6 +227,16 @@ export function createApp() {
     .map((origin) => origin.trim())
     .filter(Boolean);
 
+  if (process.env.NODE_ENV !== "production" && corsOrigins?.length) {
+    for (const origin of [...corsOrigins]) {
+      if (origin.includes("localhost")) {
+        corsOrigins.push(origin.replace("localhost", "127.0.0.1"));
+      } else if (origin.includes("127.0.0.1")) {
+        corsOrigins.push(origin.replace("127.0.0.1", "localhost"));
+      }
+    }
+  }
+
   const reflectUnconfiguredOrigins = process.env.NODE_ENV !== "production";
 
   if (!corsOrigins && !reflectUnconfiguredOrigins) {

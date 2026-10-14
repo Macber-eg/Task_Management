@@ -1,0 +1,19 @@
+# Optional split deploy: API-only service built from apps/api/Dockerfile.
+# Railway → Service → Settings → Config file path: deploy/railway/api.railway.toml
+# Also deploy web (web.railway.toml) and Postgres; see variables.split.example.
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "apps/api/Dockerfile"
+watchPatterns = [
+  "apps/api/**",
+  "packages/**",
+  "i18n/**",
+  "pnpm-lock.yaml",
+]
+
+[deploy]
+healthcheckPath = "/api/health"
+healthcheckTimeout = 180
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
