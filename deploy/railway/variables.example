@@ -1,7 +1,10 @@
-# Copy these into the Kaneo service in Railway (Variables tab).
+# Copy these into the KANEO (GitHub) service — not the Postgres service.
+# First add PostgreSQL: Project → + New → Database → PostgreSQL, then link DATABASE_URL below.
+# Full steps: deploy/railway/RAILWAY_SETUP.md
+#
 # Replace "Postgres" with your database service name if different.
 #
-# Required
+# Required on the Kaneo service
 KANEO_CLIENT_URL=https://${{RAILWAY_PUBLIC_DOMAIN}}
 DATABASE_URL=${{Postgres.DATABASE_URL}}
 AUTH_SECRET=<run: openssl rand -hex 32>
