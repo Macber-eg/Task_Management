@@ -1,0 +1,10 @@
+# Variables for the Postgres service (deploy/railway/postgres).
+# Generate POSTGRES_PASSWORD once and keep it stable (data volume retains the old password).
+
+POSTGRES_USER=kaneo
+POSTGRES_DB=kaneo
+POSTGRES_PASSWORD=<openssl rand -hex 32>
+PGDATA=/var/lib/postgresql/data/pgdata
+
+# Railway exposes DATABASE_URL on this service after deploy.
+# Reference it from the Kaneo service: DATABASE_URL=${{Postgres.DATABASE_URL}}

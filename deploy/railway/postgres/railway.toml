@@ -1,0 +1,18 @@
+# PostgreSQL for Kaneo on Railway (same GitHub repo, second service).
+#
+# Railway project setup:
+# 1. Kaneo app service — repo root, uses /railway.toml (Dockerfile.kaneo).
+# 2. This service — Settings → Root Directory: deploy/railway/postgres
+#    (or set Dockerfile path to deploy/railway/postgres/Dockerfile).
+# 3. Settings → Volumes → mount /var/lib/postgresql/data (required).
+# 4. On the Kaneo service: DATABASE_URL = ${{Postgres.DATABASE_URL}}
+#    (use this service’s name if you renamed it).
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+[deploy]
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
+requiredMountPath = "/var/lib/postgresql/data"

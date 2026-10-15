@@ -1,6 +1,6 @@
 # Default Kaneo service: build the bundled web + API image from this repo.
 # In Railway: New Project → Deploy from GitHub → select this repo.
-# Add a PostgreSQL plugin, then set variables from deploy/railway/variables.example.
+# Add Postgres (plugin or deploy/railway/postgres), then deploy/railway/variables.example.
 # Public networking: expose port 5173 and generate a domain.
 
 [build]

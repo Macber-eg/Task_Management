@@ -1,0 +1,59 @@
+# Full Kaneo + PostgreSQL stack (reference for Railway and local Docker).
+# Railway does not run this file automatically — create two services from the repo
+# (root railway.toml + deploy/railway/postgres) or use Railway's Postgres plugin.
+# Local test from repo root:
+#   POSTGRES_PASSWORD=... AUTH_SECRET=... docker compose -f deploy/railway/compose.stack.yml up --build
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kaneo}
+      POSTGRES_DB: ${POSTGRES_DB:-kaneo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  kaneo:
+    build:
+      context: ../..
+      dockerfile: Dockerfile.kaneo
+    ports:
+      - "127.0.0.1:5173:5173"
+    environment:
+      KANEO_CLIENT_URL: ${KANEO_CLIENT_URL:-http://localhost:5173}
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-kaneo}
+      POSTGRES_DB: ${POSTGRES_DB:-kaneo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET}
+      PORT: "5173"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-Y",
+          "off",
+          "--quiet",
+          "--spider",
+          "http://127.0.0.1:5173/api/health",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 120s
+      retries: 3
+
+volumes:
+  postgres_data:

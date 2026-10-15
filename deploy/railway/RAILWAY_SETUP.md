@@ -10,15 +10,27 @@ Railway needs **two services**: your app **and** a PostgreSQL database. The data
 
 ## 2. Add PostgreSQL (required)
 
+Pick **one** of these. The database definition also lives in this repo under **`deploy/railway/postgres/`** and **`deploy/railway/compose.stack.yml`**.
+
+### Option A — Railway managed Postgres (simplest)
+
 1. In the same project, click **+ New** → **Database** → **PostgreSQL**.
 2. Wait until Postgres shows as running.
-3. Open the **Postgres** service → **Variables** → confirm **`DATABASE_URL`** exists (Railway creates it).
+3. Open the **Postgres** service → **Variables** → confirm **`DATABASE_URL`** exists.
 
-Optional on Postgres (recommended):
+Optional variable on Postgres:
 
 ```env
 PGDATA=/var/lib/postgresql/data/pgdata
 ```
+
+### Option B — Postgres from this GitHub repo (second service)
+
+1. **+ New** → **GitHub Repo** → same repository (`Task_Management`).
+2. **Settings → Root Directory**: `deploy/railway/postgres` (uses `deploy/railway/postgres/railway.toml`).
+3. **Settings → Volumes** → add volume mounted at **`/var/lib/postgresql/data`**.
+4. **Variables** → copy from `deploy/railway/postgres/variables.example` (`POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD`, `PGDATA`).
+5. Rename the service to **`Postgres`** (or adjust `${{Postgres.DATABASE_URL}}` below to match).
 
 ## 3. Wire the Kaneo service to Postgres
 
