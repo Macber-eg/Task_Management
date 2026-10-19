@@ -15,3 +15,11 @@ PORT=5173
 # Recommended after you create the first admin account
 # DISABLE_REGISTRATION=true
 # DISABLE_GUEST_ACCESS=true
+#
+# Email (workspace invitations, sign-in codes) — see deploy/railway/smtp.env.example
+# SMTP_HOST=
+# SMTP_PORT=587
+# SMTP_SECURE=false
+# SMTP_USER=
+# SMTP_PASSWORD=
+# SMTP_FROM=Kaneo <noreply@your-domain.com>

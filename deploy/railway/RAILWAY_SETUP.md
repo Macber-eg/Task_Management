@@ -61,6 +61,12 @@ Health check path: **`/api/health`**.
 
 Use the generated **https://…railway.app** URL. Create the first account, then optionally set `DISABLE_REGISTRATION=true` and redeploy.
 
+## 6. Email for invitations (optional)
+
+Workspace invites are sent over **SMTP**. On the Kaneo service, add the variables from [`smtp.env.example`](./smtp.env.example) and redeploy. See [`EMAIL.md`](./EMAIL.md) for Resend, Brevo, SendGrid, and local Mailpit.
+
+Without SMTP, invites still work via **copy invitation link** in the UI.
+
 ## Split API + web (optional)
 
 Use `deploy/railway/api.railway.toml` and `deploy/railway/web.railway.toml` on two services instead of `Dockerfile.kaneo`. See `variables.split.example`.
