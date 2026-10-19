@@ -111,6 +111,9 @@ export default function ProjectNavItem({
     });
   };
 
+  const rowActionClass =
+    "relative z-10 flex size-6 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 opacity-0 transition-opacity hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 group-hover/project-tree:opacity-100 group-focus-within/project-tree:opacity-100 data-[state=open]:opacity-100 md:opacity-0";
+
   const header = (
     <>
       <div className="flex min-w-0 flex-1 items-center gap-0.5">
@@ -141,6 +144,10 @@ export default function ProjectNavItem({
           className={cn(
             "min-w-0 flex-1 px-1.5 text-sm",
             planningEnabled && projectDates ? "h-auto min-h-8 py-1" : "h-8",
+            planningEnabled &&
+              (project.phasesEnabled
+                ? "group-hover/menu-item:pe-14"
+                : "group-hover/menu-item:pe-8"),
           )}
           onClick={onBoard}
         >
@@ -172,27 +179,25 @@ export default function ProjectNavItem({
             />
           ) : null}
         </SidebarMenuButton>
-        {planningEnabled && project.phasesEnabled ? (
-          <PlanningQuickAddPopover
-            project={project}
-            className="flex size-6 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/70 opacity-0 transition-opacity hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-hover/project-tree:opacity-100"
-          />
-        ) : null}
       </div>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <button
-              type="button"
-              onPointerDown={(event) => event.stopPropagation()}
-              className="absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-lg p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground after:-inset-2 after:absolute md:after:hidden peer-data-[size=sm]/menu-button:top-1 peer-data-[size=default]/menu-button:top-1.5 peer-data-[size=lg]/menu-button:top-2.5 group-data-[collapsible=icon]:hidden group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0"
-            />
-          }
-        >
-          <MoreHorizontal />
-          <span className="sr-only">{t("navigation:sidebar.more")}</span>
-        </DropdownMenuTrigger>
+      <div className="absolute top-1/2 right-1 z-10 flex -translate-y-1/2 items-center gap-0.5 group-data-[collapsible=icon]:hidden">
+        {planningEnabled && project.phasesEnabled ? (
+          <PlanningQuickAddPopover project={project} className={rowActionClass} />
+        ) : null}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <button
+                type="button"
+                onPointerDown={(event) => event.stopPropagation()}
+                className={rowActionClass}
+              />
+            }
+          >
+            <MoreHorizontal className="size-4" />
+            <span className="sr-only">{t("navigation:sidebar.more")}</span>
+          </DropdownMenuTrigger>
         <DropdownMenuContent
           className="min-w-44 rounded-lg"
           side={isMobile ? "bottom" : "right"}
@@ -244,7 +249,8 @@ export default function ProjectNavItem({
             </>
           )}
         </DropdownMenuContent>
-      </DropdownMenu>
+        </DropdownMenu>
+      </div>
     </>
   );
 
@@ -259,7 +265,10 @@ export default function ProjectNavItem({
       className="group/project-tree"
     >
       {header}
-      <CollapsiblePanel>
+      <CollapsiblePanel
+        className="min-h-0 overflow-visible"
+        onPointerDown={(event) => event.stopPropagation()}
+      >
         <ProjectPlanningSidebarTree
           project={project}
           workspaceId={workspaceId}

@@ -444,7 +444,7 @@ export default function ProjectPlanningSidebarTree({
   };
 
   const hoverAction =
-    "flex size-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-sidebar-accent group-hover/row:opacity-100 data-[state=open]:opacity-100";
+    "relative z-10 flex size-6 shrink-0 items-center justify-center rounded-sm text-muted-foreground opacity-0 transition-opacity hover:bg-sidebar-accent group-hover/row:opacity-100 group-focus-within/row:opacity-100 data-[state=open]:opacity-100";
 
   const renderSprint = (sprint: ProjectSprint, phaseId: string) => (
     <SidebarMenuSubItem key={sprint.id}>
@@ -477,6 +477,7 @@ export default function ProjectPlanningSidebarTree({
                 onCommit={(name) => renameSprint(sprint.id, name)}
               />
             </SidebarMenuSubButton>
+            <div className="flex shrink-0 items-center gap-0.5 pl-0.5">
             <PlanningDatesPopover
               startDate={sprint.startDate}
               endDate={sprint.endDate}
@@ -534,6 +535,7 @@ export default function ProjectPlanningSidebarTree({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            </div>
           </div>
         )}
       </SortableRow>
@@ -598,8 +600,13 @@ export default function ProjectPlanningSidebarTree({
                   onCommit={(name) => renamePhase(phase.id, name)}
                 />
               </SidebarMenuSubButton>
+              <div className="flex shrink-0 items-center gap-0.5 pl-0.5">
               {sprintsEnabled ? (
-                <PlanningQuickAddPopover project={project} phaseId={phase.id} />
+                <PlanningQuickAddPopover
+                  project={project}
+                  phaseId={phase.id}
+                  className={hoverAction}
+                />
               ) : null}
               <PlanningDatesPopover
                 startDate={phase.startDate}
@@ -644,6 +651,7 @@ export default function ProjectPlanningSidebarTree({
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              </div>
             </div>
           )}
         </SortableRow>
@@ -666,7 +674,11 @@ export default function ProjectPlanningSidebarTree({
         items={sortableIds}
         strategy={verticalListSortingStrategy}
       >
-        <SidebarMenuSub className="mx-0 max-h-[min(70vh,32rem)] overflow-y-auto border-l-0 px-0 py-0.5">
+        <SidebarMenuSub
+          className="mx-0 max-h-[min(70vh,32rem)] min-h-0 touch-pan-y overflow-y-auto overscroll-y-contain border-l-0 px-0 py-0.5 [-webkit-overflow-scrolling:touch]"
+          onPointerDown={(event) => event.stopPropagation()}
+          onWheel={(event) => event.stopPropagation()}
+        >
           {phasesEnabled && sidebarPhases.map((phase) => renderPhase(phase))}
 
           {sprintsEnabled &&
