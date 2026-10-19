@@ -14,7 +14,9 @@ function RootComponent() {
   return (
     <ToastProvider position="bottom-right">
       <div className="flex h-svh w-full flex-row overflow-x-hidden overflow-y-hidden bg-background scrollbar-thin scrollbar-thumb-border scrollbar-track-muted">
-        <Outlet />
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <Outlet />
+        </div>
       </div>
     </ToastProvider>
   );

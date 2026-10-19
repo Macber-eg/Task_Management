@@ -52,8 +52,9 @@ function Layout({ children, className }: LayoutProps) {
   useUserPreferencesEffects();
 
   return (
-    <div className="flex w-full bg-background">
+    <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-background">
       <SidebarProvider
+        className="min-h-0 flex-1"
         defaultOpen={sidebarDefaultOpen}
         style={
           {
@@ -65,7 +66,7 @@ function Layout({ children, className }: LayoutProps) {
         <AppSidebar />
         <SidebarInset
           className={cn(
-            "m-2 flex flex-1 flex-col overflow-auto rounded-xl border border-border/80 bg-background shadow-sm/5",
+            "m-2 flex min-h-0 flex-1 flex-col overflow-auto rounded-xl border border-border/80 bg-background shadow-sm/5",
             "md:peer-data-[variant=inset]:peer-data-[state=collapsed]:border-0",
             {
               "before:content-[''] before:absolute before:inset-0 before:bg-cover before:bg-center before:bg-(image:--bg) before:pointer-events-none":
