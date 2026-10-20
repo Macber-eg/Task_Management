@@ -383,6 +383,8 @@ function RouteComponent() {
         <CreateTaskModal
           open={isTaskModalOpen}
           projectId={projectId}
+          sprintId={sprintId}
+          phaseId={phaseId}
           onClose={() => setIsTaskModalOpen(false)}
         />
 

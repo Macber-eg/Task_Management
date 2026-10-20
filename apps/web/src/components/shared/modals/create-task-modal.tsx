@@ -80,6 +80,8 @@ import { getColumnIcon } from "@/lib/column";
 import { getStatusDisplayLabel } from "@/lib/i18n/domain";
 import useCreateLabel from "@/hooks/mutations/label/use-create-label";
 import useCreateTask from "@/hooks/mutations/task/use-create-task";
+import updateTaskPhase from "@/fetchers/task/update-task-phase";
+import updateTaskSprint from "@/fetchers/task/update-task-sprint";
 import useGetCustomFieldsByProject from "@/hooks/queries/custom-field/use-get-custom-fields-by-project";
 import useGetLabelsByWorkspace from "@/hooks/queries/label/use-get-labels-by-workspace";
 import useGetProjects from "@/hooks/queries/project/use-get-projects";
@@ -107,6 +109,9 @@ type CreateTaskModalProps = {
   onClose: () => void;
   status?: string;
   projectId?: string;
+  /** When the board is scoped to a sprint/phase, new tasks are linked so they stay visible. */
+  sprintId?: string;
+  phaseId?: string;
 };
 
 type Priority = "no-priority" | "low" | "medium" | "high" | "urgent";
@@ -180,6 +185,8 @@ function CreateTaskModalContent({
   onClose,
   status,
   projectId,
+  sprintId,
+  phaseId,
 }: CreateTaskModalProps) {
   const { t } = useTranslation();
   const { project, setProject } = useProjectStore();
@@ -551,7 +558,7 @@ function CreateTaskModalContent({
         submitStatus = getInitialTaskColumn(workflow.data)?.slug ?? "planned";
       }
       didSubmitRef.current = true;
-      const savedTask = normalizeTask(
+      let savedTask = normalizeTask(
         await createTask({
           title: title.trim(),
           description: description.trim() || "",
@@ -579,6 +586,14 @@ function CreateTaskModalContent({
           })(),
         }),
       );
+
+      if (sprintId) {
+        savedTask = normalizeTask(
+          await updateTaskSprint(savedTask.id, sprintId),
+        );
+      } else if (phaseId) {
+        savedTask = normalizeTask(await updateTaskPhase(savedTask.id, phaseId));
+      }
 
       for (const label of labels) {
         try {
@@ -1699,7 +1714,13 @@ function CreateTaskModal(props: CreateTaskModalProps) {
   // upload drafts, instead of carrying confidential fields into a new context.
   return (
     <CreateTaskModalContent
-      key={JSON.stringify([workspace?.id, location.pathname, props.projectId])}
+      key={JSON.stringify([
+        workspace?.id,
+        location.pathname,
+        props.projectId,
+        props.sprintId,
+        props.phaseId,
+      ])}
       {...props}
     />
   );
