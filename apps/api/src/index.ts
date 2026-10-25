@@ -1165,7 +1165,11 @@ const isMainModule =
   import.meta.url === pathToFileURL(entrypoint).href;
 
 if (isMainModule) {
-  void startServer(injectWebSocket);
+  const port = Number.parseInt(process.env.PORT ?? "", 10);
+  void startServer(
+    injectWebSocket,
+    Number.isFinite(port) && port > 0 ? port : 1337,
+  );
 }
 
 export type AppType =

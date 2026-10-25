@@ -69,7 +69,11 @@ Without SMTP, invites still work via **copy invitation link** in the UI.
 
 ## Split API + web (optional)
 
-Use `deploy/railway/api.railway.toml` and `deploy/railway/web.railway.toml` on two services instead of `Dockerfile.kaneo`. See `variables.split.example`.
+Use `deploy/railway/api.railway.toml` and `deploy/railway/web.railway.toml` on two services instead of `Dockerfile.kaneo`. See [`SPLIT_DEPLOY.md`](./SPLIT_DEPLOY.md) and `variables.split.example` (SMTP + S3 on the **API** service only).
+
+## Object storage (optional)
+
+Task attachments use S3-compatible storage on the **API** process. Add variables from [`s3.env.example`](./s3.env.example) and configure bucket CORS for your public web URL.
 
 ## Still seeing localhost?
 
