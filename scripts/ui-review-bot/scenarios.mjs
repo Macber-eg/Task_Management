@@ -4,7 +4,7 @@ export function checkSupportedSurface(files) {
   if (
     files.some(
       ({ path }) =>
-        path.startsWith("apps/site/") || path.startsWith("apps/docs/"),
+        path.startsWith("apps/docs/"),
     ) &&
     !files.some(
       ({ path }) =>
@@ -12,7 +12,7 @@ export function checkSupportedSurface(files) {
     )
   ) {
     throw new Error(
-      "This PR changes the marketing site or docs. Peekareq currently previews apps/web only; refusing unrelated app screenshots.",
+      "This PR changes the docs. Peekareq currently previews apps/web only; refusing unrelated app screenshots.",
     );
   }
 }

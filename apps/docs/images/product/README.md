@@ -2,7 +2,7 @@
 
 These are captures of the real Kaneo frontend using fictional Studio North data. No live account or database is used.
 
-Board, List, task, and Gantt images use the same fixture capture as `apps/site/public/images/product/`, in both light and dark themes. Their original viewport is 1728 × 1000 at 2× density. These eight images are checked-in captures; the settings capture script below does not regenerate them.
+Board, List, task, and Gantt images are checked-in captures of the Kaneo frontend in both light and dark themes. Their original viewport is 1728 × 1000 at 2× density. The settings capture script below does not regenerate them.
 
 Backlog, members, labels, workflow, integrations, notifications, and security settings are captured at 1440 × 1000 with 2× density. From the repository root, run:
 

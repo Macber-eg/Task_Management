@@ -20,7 +20,7 @@ Treat this guide as a set of defaults. The developer's request takes precedence.
 - `apps/web` — React UI, fetchers, TanStack Query hooks, and realtime cache updates.
 - `packages/libs` — typed Hono client and URL helpers; `packages/permissions` — permission vocabulary and built-in roles.
 - `packages/mcp` — published stdio MCP package.
-- `apps/docs` — product and API docs; `apps/site` — public site and docs host.
+- `apps/docs` — product and API docs.
 - `charts/kaneo` — Helm chart; `tests/api` and `tests/api-integration` — API tests.
 
 ## Follow a change through

@@ -6,11 +6,11 @@ import {
   timeTrackingPlan,
 } from "../scenarios.mjs";
 
-test("site changes cannot generate unrelated task screenshots", () => {
+test("docs changes cannot generate unrelated task screenshots", () => {
   assert.throws(
     () =>
       checkSupportedSurface([
-        { path: "apps/site/components/landing/hero.tsx" },
+        { path: "apps/docs/cli/install.mdx" },
         { path: "apps/web/src/main.tsx" },
         { path: "apps/web/index.html" },
       ]),

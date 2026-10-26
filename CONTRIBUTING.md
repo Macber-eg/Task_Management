@@ -175,7 +175,7 @@ integration tests remain behind `pnpm test:integration`.
 
 Vite+ built-ins and package scripts are distinct: `vp build` builds a Vite app,
 while `vp run build` runs the package's build script. The API still uses esbuild,
-the site uses Next.js, and libraries use TypeScript to preserve their output.
+and libraries use TypeScript to preserve their output.
 Typechecking remains an explicit package task so both web tsconfigs are covered.
 The root lint configuration preserves the previous policy where equivalents exist;
 additional React Compiler and accessibility rules are left for a separate review.
@@ -263,7 +263,6 @@ kaneo/
 ├── apps/
 │   ├── api/          # Backend API (Node.js/Hono)
 │   ├── docs/         # Product and API documentation content
-│   ├── site/         # Public website and documentation host (Next.js)
 │   └── web/          # Frontend app (React/Vite)
 ├── packages/
 │   ├── email/        # Shared email utilities and templates
