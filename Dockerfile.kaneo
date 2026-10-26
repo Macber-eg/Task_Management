@@ -94,31 +94,33 @@ RUN pnpm run build && find dist -type f -name '*.map' -delete
 
 FROM node:24.19.0-alpine AS runtime
 
-RUN apk add --no-cache nginx=~1.30.6 && \
-  addgroup -g 1001 appuser && \
-  adduser -u 1001 -G appuser -D appuser && \
-  mkdir -p /app /app/apps/api/data /var/cache/nginx /var/run/nginx /var/log/nginx /var/lib/nginx/logs /var/lib/nginx/tmp /usr/share/nginx/html /docker-entrypoint.d && \
-  chown -R appuser:appuser /app /app/apps/api/data /var/cache/nginx /var/run/nginx /var/log/nginx /var/lib/nginx /usr/share/nginx/html /docker-entrypoint.d && \
-  touch /var/run/nginx.pid && \
-  chown appuser:appuser /var/run/nginx.pid && \
-  printf 'worker_processes auto;\nerror_log /var/log/nginx/error.log warn;\npid /var/run/nginx.pid;\nevents { worker_connections 1024; }\nhttp {\n  include /etc/nginx/mime.types;\n  default_type application/octet-stream;\n  include /etc/nginx/conf.d/*.conf;\n}\n' > /etc/nginx/nginx.conf
-
 WORKDIR /app
 
-COPY --from=api-runtime --chown=appuser:appuser /app /app
+# Copying the finished builds first keeps nginx off the builder until the two
+# compiler stages are done. Railway kills this install when it runs beside them.
+COPY --from=api-runtime /app /app
+COPY --from=web-builder /app/apps/web/dist /usr/share/nginx/html
 
 # Fail the build early if the runtime dependency layout is broken on the target architecture
 RUN cd /app/apps/api && node -e "const fs=require('fs');for(const m of ['bcryptjs','hono','pg','drizzle-orm','better-auth','ioredis','valibot','octokit','@modelcontextprotocol/sdk']){fs.accessSync('node_modules/'+m+'/package.json')}for(const m of ['email','permissions','importers']){fs.accessSync('node_modules/@kaneo/'+m+'/dist/index.js')}" && \
   node --input-type=module -e "import { registerTools } from '@kaneo/mcp/tools'; if (typeof registerTools !== 'function') process.exit(1)"
 
-COPY --from=web-builder --chown=appuser:appuser /app/apps/web/dist /usr/share/nginx/html
-COPY --chown=appuser:appuser apps/web/nginx.kaneo.conf /etc/nginx/conf.d/default.conf
-RUN chown -R appuser:appuser /etc/nginx/conf.d
-COPY --chown=appuser:appuser apps/web/env.sh /docker-entrypoint.d/env.sh
-COPY --chown=appuser:appuser apps/web/env.awk /docker-entrypoint.d/env.awk
-COPY --chown=appuser:appuser deploy/kaneo-entrypoint.sh /usr/local/bin/kaneo-entrypoint.sh
+RUN apk add --no-cache 'nginx=~1.30.6' && \
+  addgroup -g 1001 appuser && \
+  adduser -u 1001 -G appuser -D appuser && \
+  mkdir -p /app/apps/api/data /var/cache/nginx /var/run/nginx /var/log/nginx /var/lib/nginx/logs /var/lib/nginx/tmp /usr/share/nginx/html /docker-entrypoint.d && \
+  printf 'worker_processes auto;\nerror_log /var/log/nginx/error.log warn;\npid /var/run/nginx.pid;\nevents { worker_connections 1024; }\nhttp {\n  include /etc/nginx/mime.types;\n  default_type application/octet-stream;\n  include /etc/nginx/conf.d/*.conf;\n}\n' > /etc/nginx/nginx.conf && \
+  touch /var/run/nginx.pid && \
+  chown -R appuser:appuser /app /var/cache/nginx /var/run/nginx /var/log/nginx /var/lib/nginx /usr/share/nginx/html /docker-entrypoint.d && \
+  chown appuser:appuser /var/run/nginx.pid
 
-RUN chmod +x /docker-entrypoint.d/env.sh /usr/local/bin/kaneo-entrypoint.sh
+COPY apps/web/nginx.kaneo.conf /etc/nginx/conf.d/default.conf
+COPY apps/web/env.sh /docker-entrypoint.d/env.sh
+COPY apps/web/env.awk /docker-entrypoint.d/env.awk
+COPY deploy/kaneo-entrypoint.sh /usr/local/bin/kaneo-entrypoint.sh
+
+RUN chown -R appuser:appuser /etc/nginx/conf.d /docker-entrypoint.d /usr/local/bin/kaneo-entrypoint.sh && \
+  chmod +x /docker-entrypoint.d/env.sh /usr/local/bin/kaneo-entrypoint.sh
 
 ENV NODE_ENV=production
 
