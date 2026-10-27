@@ -105,6 +105,7 @@ WORKDIR /app
 # compiler stages are done. Railway kills this install when it runs beside them.
 COPY --from=api-runtime /app /app
 COPY --from=web-builder /app/apps/web/dist /usr/share/nginx/html
+RUN test -f /usr/share/nginx/html/index.html
 
 # Fail the build early if the runtime dependency layout is broken on the target architecture
 RUN cd /app/apps/api && node -e "const fs=require('fs');for(const m of ['bcryptjs','hono','pg','drizzle-orm','better-auth','ioredis','valibot','octokit','@modelcontextprotocol/sdk']){fs.accessSync('node_modules/'+m+'/package.json')}for(const m of ['email','permissions','importers']){fs.accessSync('node_modules/@kaneo/'+m+'/dist/index.js')}" && \

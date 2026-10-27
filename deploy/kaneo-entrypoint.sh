@@ -77,7 +77,14 @@ fi
 
 /docker-entrypoint.d/env.sh
 
-node --enable-source-maps /app/apps/api/dist/index.js &
+if [ ! -f /usr/share/nginx/html/index.html ]; then
+  echo "ERROR: frontend build is missing from /usr/share/nginx/html" >&2
+  exit 1
+fi
+
+# Railway routes the public domain to nginx on 5173 and also injects PORT.
+# The API must stay on 1337, where nginx proxies /api.
+PORT=1337 node --enable-source-maps /app/apps/api/dist/index.js &
 api_pid=$!
 
 echo "Waiting for API to be ready..."
@@ -92,6 +99,7 @@ echo "API is ready"
 
 nginx -g "daemon off;" &
 nginx_pid=$!
+echo "Frontend is being served on port 5173"
 
 while kill -0 "$api_pid" 2>/dev/null && kill -0 "$nginx_pid" 2>/dev/null; do
   sleep 1
