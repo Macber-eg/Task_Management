@@ -12,6 +12,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@kaneo/web", "dev"],
       "port": 5173
+    },
+    {
+      "name": "v2-backend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "v2/backend", "dev"],
+      "port": 1338
     }
   ]
 }

@@ -1,0 +1,8 @@
+# Keeps this project out of the parent monorepo workspace: it installs with
+# its own lockfile and node_modules.
+packages:
+  - "."
+
+onlyBuiltDependencies:
+  - "@nestjs/core"
+  - "@swc/core"
