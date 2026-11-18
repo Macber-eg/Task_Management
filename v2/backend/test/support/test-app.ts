@@ -7,6 +7,8 @@ import { AppModule } from "../../src/app.module";
 import { Authenticator } from "../../src/auth/authenticator";
 import { ApiExpressAdapter } from "../../src/common/http/api-express-adapter";
 import { configureApp } from "../../src/configure-app";
+import { EmailTransport } from "../../src/email/email-transport";
+import { EmailTransportDouble } from "./email-transport-double";
 import { TestAuthenticator } from "./test-authenticator";
 
 type ProviderToken<T = unknown> = Type<T> | Abstract<T>;
@@ -19,6 +21,8 @@ export type TestApp = {
   /** Resolves a provider from the running application. */
   get<T>(token: ProviderToken<T>): T;
   auth: TestAuthenticator;
+  /** Every email the app sent; nothing reaches a real SMTP server. */
+  emails: EmailTransportDouble;
   dataSource: DataSource;
   /** Shorthand for `dataSource.manager`, what the fixtures take. */
   db: EntityManager;
@@ -44,6 +48,8 @@ export async function createTestApp(
   if (!options.realAuth) {
     builder = builder.overrideProvider(Authenticator).useValue(auth);
   }
+  const emails = new EmailTransportDouble();
+  builder = builder.overrideProvider(EmailTransport).useValue(emails);
   for (const [token, value] of options.overrides ?? []) {
     builder = builder.overrideProvider(token).useValue(value);
   }
@@ -64,6 +70,7 @@ export async function createTestApp(
     request: (path, init) => fetch(`${baseUrl}${path}`, init),
     get: (token) => app.get(token, { strict: false }),
     auth,
+    emails,
     dataSource,
     db: dataSource.manager,
     close: () => app.close(),

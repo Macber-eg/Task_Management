@@ -1,7 +1,6 @@
 /**
  * What the rest of the application asks of the WebSocket layer when access
- * changes. The realtime module provides the real implementation; until it is
- * registered, `NoopRealtimeConnections` stands in.
+ * changes. `RealtimeHub` implements it; tests may replace it with a double.
  */
 export abstract class RealtimeConnections {
   /** Tells every socket of the user that their access was revoked. */

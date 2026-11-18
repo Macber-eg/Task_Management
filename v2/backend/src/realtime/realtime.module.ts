@@ -1,12 +1,23 @@
 import { Global, Module } from "@nestjs/common";
-import { NoopRealtimeConnections } from "./noop-realtime-connections";
+import { BroadcastAdapterFactory } from "./broadcast-adapter-factory";
+import { RealtimeAccessReader } from "./realtime-access-reader";
 import { RealtimeConnections } from "./realtime-connections";
+import { RealtimeEventSubscriptions } from "./realtime-event-subscriptions";
+import { RealtimeHub } from "./realtime-hub";
+import { WebSocketGateway } from "./websocket-gateway";
+import { WebSocketHandshake } from "./websocket-handshake";
 
 @Global()
 @Module({
   providers: [
-    { provide: RealtimeConnections, useClass: NoopRealtimeConnections },
+    BroadcastAdapterFactory,
+    RealtimeAccessReader,
+    RealtimeHub,
+    { provide: RealtimeConnections, useExisting: RealtimeHub },
+    RealtimeEventSubscriptions,
+    WebSocketHandshake,
+    WebSocketGateway,
   ],
-  exports: [RealtimeConnections],
+  exports: [RealtimeConnections, RealtimeHub],
 })
 export class RealtimeModule {}

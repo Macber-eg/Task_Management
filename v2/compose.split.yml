@@ -1,0 +1,43 @@
+# Override for a separately hosted frontend and backend: the web app calls the
+# API at its own public URL instead of through the frontend's nginx.
+#
+#   docker compose -f compose.yml -f compose.split.yml up -d --build
+#
+# Put each published port behind its own HTTPS host name, e.g.
+#   https://app.example.com -> frontend (KANEO_HTTP_PORT)
+#   https://api.example.com -> backend  (KANEO_API_PORT)
+# and set in .env:
+#   VITE_API_URL=https://api.example.com     # baked into the web build
+#   KANEO_CLIENT_URL=https://app.example.com
+#   KANEO_API_URL=https://api.example.com
+#   CORS_ORIGINS=https://app.example.com     # optional, defaults to KANEO_CLIENT_URL
+#   COOKIE_DOMAIN=                           # usually unset, see below
+#
+# Cookies: the session cookies are httpOnly and set by the API host. When the
+# two hosts differ over HTTPS they become `SameSite=None; Secure; Partitioned`,
+# and browsers that block third-party cookies drop them unless both hosts are
+# the same site, i.e. share a registrable parent domain (app.example.com and
+# api.example.com work; app.example.com and kaneo-api.example.net do not).
+# Over plain HTTP the cookies stay SameSite=Lax, so only same-site hosts work
+# at all. Prefer the same-origin layout in compose.yml when you can.
+# COOKIE_DOMAIN (e.g. .example.com) is only needed when the API is reached
+# under more than one host name of that domain; host-only cookies on the API
+# host are otherwise enough, because only the API reads them.
+
+services:
+  backend:
+    ports:
+      - "${KANEO_API_PORT:-1337}:1337"
+    environment:
+      # Published directly, so only a reverse proxy you name may report the
+      # client address: set TRUSTED_PROXIES to its address or range.
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.0/8,::1/128}
+
+  frontend:
+    build:
+      args:
+        VITE_API_URL: ${VITE_API_URL:?set VITE_API_URL to the public API URL in .env}
+    image: kaneo-v2-frontend:split
+    environment:
+      # Empty: nginx serves only the app; /api/ and /.well-known/ answer 404.
+      KANEO_API_UPSTREAM: ""

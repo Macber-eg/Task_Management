@@ -20,10 +20,16 @@ function isZodSchema(value: unknown): value is z.ZodType {
   );
 }
 
-function parsePart(schema: unknown, value: unknown, target: string): unknown {
+function parsePart(
+  schema: unknown,
+  value: unknown,
+  target: string,
+  message?: string,
+): unknown {
   if (!isZodSchema(schema)) return value;
   const result = schema.safeParse(value);
-  if (!result.success) throw validationError(result.error.issues, target);
+  if (!result.success)
+    throw validationError(result.error.issues, target, message);
   return result.data;
 }
 
@@ -46,13 +52,25 @@ export function validateRouteInput(
     ? undefined
     : requestSchemas?.headers;
 
-  const query = parsePart(requestSchemas?.query, request.query, "query");
-  const param = parsePart(requestSchemas?.params, request.params, "param");
-  const header = parsePart(headers, request.headers, "header");
+  const message = config.validationMessage;
+  const query = parsePart(
+    requestSchemas?.query,
+    request.query,
+    "query",
+    message,
+  );
+  const param = parsePart(
+    requestSchemas?.params,
+    request.params,
+    "param",
+    message,
+  );
+  const header = parsePart(headers, request.headers, "header", message);
   const cookie = parsePart(
     requestSchemas?.cookies,
     (request as Request & { cookies?: unknown }).cookies ?? {},
     "cookie",
+    message,
   );
 
   const body: unknown = request.body ?? {};
@@ -64,7 +82,7 @@ export function validateRouteInput(
     param,
     header,
     cookie,
-    json: jsonSchema ? parsePart(jsonSchema, body, "json") : undefined,
-    form: formSchema ? parsePart(formSchema, body, "form") : undefined,
+    json: jsonSchema ? parsePart(jsonSchema, body, "json", message) : undefined,
+    form: formSchema ? parsePart(formSchema, body, "form", message) : undefined,
   };
 }

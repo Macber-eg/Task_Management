@@ -15,6 +15,9 @@ import {
 } from "../tokens/refresh-token";
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+// A login with `rememberMe: false` lasts one day and is never extended.
+const DONT_REMEMBER_TTL_MS = 24 * 60 * 60 * 1000;
+const OPAQUE_RENEW_AFTER_MS = 24 * 60 * 60 * 1000;
 
 // Two tabs can refresh at the same moment: one rotates, the other arrives
 // with the token that was just replaced. Within this window that is treated
@@ -24,6 +27,7 @@ const ROTATION_GRACE_MS = 20_000;
 export type SessionMeta = {
   ipAddress?: string | null;
   userAgent?: string | null;
+  rememberMe?: boolean;
 };
 
 export type LiveSession = { session: SessionEntity; user: UserEntity };
@@ -32,15 +36,32 @@ export type IssuedSession = LiveSession & {
   accessToken: string;
   /** Null when only the access token was reissued. */
   refreshToken: string | null;
+  /** False for a `rememberMe: false` login: its cookie ends with the browser session. */
+  persistent?: boolean;
 };
 
 type RotationOutcome =
-  | { kind: "issued"; live: LiveSession; refreshToken: string | null }
+  | {
+      kind: "issued";
+      live: LiveSession;
+      refreshToken: string | null;
+      persistent: boolean;
+    }
   | { kind: "stolen"; sessionId: string }
   | { kind: "rejected" };
 
 function expiryFrom(now: Date): Date {
   return new Date(now.getTime() + SESSION_TTL_MS);
+}
+
+// Rotation sets `rotated_at` without extending such a login, so its remaining
+// lifetime never exceeds the short one it started with.
+function isPersistent(session: SessionEntity): boolean {
+  if (!session.rotatedAt) return true;
+  return (
+    session.expiresAt.getTime() - session.rotatedAt.getTime() >
+    DONT_REMEMBER_TTL_MS
+  );
 }
 
 /**
@@ -65,7 +86,10 @@ export class SessionService {
     const session = await insertReturning(manager, SessionEntity, {
       token: hashTokenSecret(secret),
       userId: user.id,
-      expiresAt: expiryFrom(now),
+      expiresAt:
+        meta.rememberMe === false
+          ? new Date(now.getTime() + DONT_REMEMBER_TTL_MS)
+          : expiryFrom(now),
       ipAddress: meta.ipAddress ?? null,
       userAgent: meta.userAgent ?? null,
       // A new login starts in the user's first workspace, if they have one.
@@ -78,6 +102,7 @@ export class SessionService {
     return this.issue(
       { session, user },
       formatRefreshToken(session.id, secret),
+      meta.rememberMe !== false,
     );
   }
 
@@ -101,6 +126,7 @@ export class SessionService {
         });
         if (!user || isBanActive(user)) return { kind: "rejected" };
 
+        const persistent = isPersistent(session);
         if (sameHash(session.token, presented)) {
           const secret = newTokenSecret();
           const [rotated] = await updateReturning(
@@ -110,7 +136,7 @@ export class SessionService {
               token: hashTokenSecret(secret),
               previousToken: session.token,
               rotatedAt: now,
-              expiresAt: expiryFrom(now),
+              expiresAt: persistent ? expiryFrom(now) : session.expiresAt,
             },
             { id: session.id },
           );
@@ -119,6 +145,7 @@ export class SessionService {
             kind: "issued",
             live: { session: rotated, user },
             refreshToken: formatRefreshToken(session.id, secret),
+            persistent,
           };
         }
 
@@ -132,6 +159,7 @@ export class SessionService {
               kind: "issued",
               live: { session, user },
               refreshToken: null,
+              persistent,
             };
           }
           await manager.delete(SessionEntity, { id: session.id });
@@ -146,7 +174,7 @@ export class SessionService {
       await this.realtime.revokeSessionConnections(outcome.sessionId);
     }
     if (outcome.kind !== "issued") return null;
-    return this.issue(outcome.live, outcome.refreshToken);
+    return this.issue(outcome.live, outcome.refreshToken, outcome.persistent);
   }
 
   /**
@@ -213,7 +241,27 @@ export class SessionService {
         { hash: hashTokenSecret(token), raw: token },
       )
       .getOne();
-    return this.usable(session);
+    const live = this.usable(session);
+    return live ? this.slideOpaqueExpiry(live) : null;
+  }
+
+  /**
+   * Opaque tokens are never refreshed by their clients, so using one keeps
+   * it alive: once a day of its lifetime has passed, it is extended to a
+   * full lifetime again, as the previous backend did for its sessions.
+   */
+  private async slideOpaqueExpiry(live: LiveSession): Promise<LiveSession> {
+    const now = Date.now();
+    const renewDue =
+      live.session.expiresAt.getTime() - SESSION_TTL_MS + OPAQUE_RENEW_AFTER_MS;
+    if (renewDue > now) return live;
+    const [renewed] = await updateReturning(
+      this.dataSource.manager,
+      SessionEntity,
+      { expiresAt: new Date(now + SESSION_TTL_MS) },
+      { id: live.session.id },
+    );
+    return renewed ? { ...live, session: { ...renewed, user: live.user } } : live;
   }
 
   async issueAccessToken(live: LiveSession): Promise<string> {
@@ -282,11 +330,13 @@ export class SessionService {
   private async issue(
     live: LiveSession,
     refreshToken: string | null,
+    persistent = true,
   ): Promise<IssuedSession> {
     return {
       ...live,
       accessToken: await this.issueAccessToken(live),
       refreshToken,
+      persistent,
     };
   }
 

@@ -15,6 +15,8 @@ const ACCESS = "kaneo.access_token";
 const REFRESH = "kaneo.refresh_token";
 const LEGACY = "better-auth.session_token";
 const PASSWORD = "correct horse battery";
+// Readable by the web app; it outlives sign-out, as it did before.
+const LAST_LOGIN = "better-auth.last_used_login_method";
 
 type SessionBody = {
   session: { id: string; userId: string; token: string; activeOrganizationId: string | null };
@@ -87,7 +89,7 @@ describe("API integration: sessions and email sign-in", () => {
     expect(account.accountId).toBe(user.id);
     expect(account.password).toMatch(/^\$2[aby]\$10\$/);
 
-    expect(client.jar.names().sort()).toEqual([ACCESS, REFRESH]);
+    expect(client.jar.names().sort()).toEqual([LAST_LOGIN, ACCESS, REFRESH]);
     const session = await currentSession(client);
     expect(session?.user).toMatchObject({ id: user.id, role: "admin" });
     expect(session?.session.token).toBe(client.jar.get(ACCESS));
@@ -198,7 +200,7 @@ describe("API integration: sessions and email sign-in", () => {
     client.jar.delete(ACCESS);
 
     // The refresh cookie is scoped to the auth endpoints only.
-    expect(client.jar.header("/api/label/x")).toBe("");
+    expect(client.jar.header("/api/label/x")).toBe(`${LAST_LOGIN}=email`);
 
     const session = await currentSession(client);
     expect(session?.user.email).toBe("ada@example.com");
@@ -253,7 +255,7 @@ describe("API integration: sessions and email sign-in", () => {
     const response = await client.post("/api/auth/sign-out");
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ success: true });
-    expect(client.jar.names()).toEqual([]);
+    expect(client.jar.names()).toEqual([LAST_LOGIN]);
     expect(await app.db.count(SessionEntity)).toBe(0);
 
     const replay = await app.request("/api/auth/list-accounts", {

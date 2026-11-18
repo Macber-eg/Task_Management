@@ -11,14 +11,29 @@ import {
   readRefreshCookie,
   setAuthCookies,
 } from "../cookies/auth-cookies";
+import { GuestAccountLinking } from "../anonymous/guest-account-linking.service";
+import {
+  resolveLoginMethod,
+  setLastLoginMethodCookie,
+} from "../last-login-method/last-login-method";
 import { readLegacySessionCookie } from "../legacy-session-token";
+import { authPath } from "../sign-in-policy/auth-path";
 import {
   AccessTokenService,
   accessTokenTtlSeconds,
 } from "../tokens/access-token.service";
 import { hashTokenSecret, parseRefreshToken, sameHash } from "../tokens/refresh-token";
 import { sessionOutput, userOutput } from "./session-output";
-import { type IssuedSession, SessionService } from "./session.service";
+import {
+  type IssuedSession,
+  type LiveSession,
+  SessionService,
+} from "./session.service";
+
+export type StartOptions = {
+  /** `false` keeps the login to this browser session and one day. */
+  rememberMe?: boolean;
+};
 
 export type CurrentSession = {
   session: ReturnType<typeof sessionOutput>;
@@ -36,6 +51,7 @@ export class CurrentSessionService {
     private readonly authenticator: Authenticator,
     private readonly accessTokens: AccessTokenService,
     private readonly sessions: SessionService,
+    private readonly guestLinking: GuestAccountLinking,
   ) {}
 
   /**
@@ -102,19 +118,44 @@ export class CurrentSessionService {
     return null;
   }
 
-  /** Starts a session for a user who just proved who they are. */
+  /**
+   * Starts a session for a user who just proved who they are. As in the
+   * previous backend, the sign-in route also records the method used (for
+   * the web app) and retires a guest account this browser was using.
+   */
   async start(
     user: UserEntity,
     request: Request,
     response: Response,
+    options: StartOptions = {},
   ): Promise<IssuedSession> {
+    const path = authPath(request);
+    const previous = this.guestLinking.appliesTo(path)
+      ? await this.findCurrent(request)
+      : null;
+
     const issued = await this.sessions.create(user, {
       ipAddress: request.ip ?? null,
       userAgent: request.get("user-agent") ?? null,
+      rememberMe: options.rememberMe,
     });
     this.writeCookies(response, issued);
     clearLegacySessionCookie(response);
+
+    const method = resolveLoginMethod(path);
+    if (method) setLastLoginMethodCookie(response, method);
+    await this.guestLinking.afterSignIn(
+      path,
+      previous?.user ?? null,
+      issued.user,
+    );
     return issued;
+  }
+
+  /** The login the request's credentials belong to, even past access-token expiry. */
+  async findCurrent(request: Request): Promise<LiveSession | null> {
+    const sessionId = await this.sessionIdOf(request);
+    return sessionId ? this.sessions.findLive(sessionId) : null;
   }
 
   /** Ends whichever session the request's credentials belong to. */
@@ -141,7 +182,9 @@ export class CurrentSessionService {
       accessToken: issued.accessToken,
       accessTtlSeconds: accessTokenTtlSeconds(),
       refreshToken: issued.refreshToken ?? undefined,
-      refreshExpiresAt: issued.session.expiresAt,
+      // A `rememberMe: false` login's cookie ends with the browser session.
+      refreshExpiresAt:
+        issued.persistent === false ? undefined : issued.session.expiresAt,
     });
   }
 

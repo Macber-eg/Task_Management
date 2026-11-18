@@ -1,0 +1,13 @@
+# Vite reads .env files at build time; the image takes VITE_API_URL only from
+# the build argument.
+.env
+.env.*
+!.env.example
+*.local
+node_modules
+dist
+coverage
+.tanstack
+*.log
+Dockerfile
+.dockerignore

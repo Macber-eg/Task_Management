@@ -1,0 +1,72 @@
+# Kaneo v2, same-origin layout: one public port serves the web app, and its
+# nginx proxies /api/ (including WebSockets) and /.well-known/ to the backend.
+# Postgres and the backend are not published.
+#
+#   cp .env.example .env    # set AUTH_SECRET and POSTGRES_PASSWORD at least
+#   docker compose up -d --build
+#   open http://localhost:8088   (KANEO_HTTP_PORT)
+#
+# For separately hosted frontend and backend, see compose.split.yml.
+
+name: kaneo-v2
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-kaneo}
+      POSTGRES_USER: ${POSTGRES_USER:-kaneo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    image: kaneo-v2-backend:local
+    env_file:
+      - .env
+    environment:
+      # DATABASE_URL, when set in .env, wins over these parts.
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      PORT: "1337"
+      # The backend is reachable only through the frontend's nginx on this
+      # private network, so its forwarded client address can be trusted.
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.0/8,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    # The image's HEALTHCHECK polls /api/health; migrations run before it listens.
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Empty: the app calls the API at its own origin, through this nginx.
+        VITE_API_URL: ""
+    image: kaneo-v2-frontend:local
+    environment:
+      KANEO_API_UPSTREAM: http://backend:1337
+    ports:
+      - "${KANEO_HTTP_PORT:-8088}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Optional: only for more than one backend instance. Uncomment, then set
+  # REDIS_URL=redis://redis:6379 in .env.
+  # redis:
+  #   image: valkey/valkey:8-alpine
+  #   restart: unless-stopped
+
+volumes:
+  postgres_data:

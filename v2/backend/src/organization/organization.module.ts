@@ -5,9 +5,7 @@ import { InvitationController } from "./invitations/invitation.controller";
 import { InvitationCancellationService } from "./invitations/invitation-cancellation.service";
 import { InvitationCreationService } from "./invitations/invitation-creation.service";
 import { InvitationLookupService } from "./invitations/invitation-lookup.service";
-import { InvitationMailer } from "./invitations/invitation-mailer";
 import { InvitationResponseService } from "./invitations/invitation-response.service";
-import { NoopInvitationMailer } from "./invitations/noop-invitation-mailer";
 import { MemberController } from "./members/member.controller";
 import { MemberQueryService } from "./members/member-query.service";
 import { MemberRemovalService } from "./members/member-removal.service";
@@ -22,11 +20,9 @@ import { RoleDeletionService } from "./roles/role-deletion.service";
 import { RoleQueryService } from "./roles/role-query.service";
 import { RoleUpdateService } from "./roles/role-update.service";
 import { ActiveOrganizationService } from "./workspaces/active-organization.service";
-import { NoopWorkspaceDeletionGuard } from "./workspaces/noop-workspace-deletion-guard";
 import { OrganizationQueryService } from "./workspaces/organization-query.service";
 import { WorkspaceController } from "./workspaces/workspace.controller";
 import { WorkspaceCreationService } from "./workspaces/workspace-creation.service";
-import { WorkspaceDeletionGuard } from "./workspaces/workspace-deletion-guard";
 import { WorkspaceDeletionService } from "./workspaces/workspace-deletion.service";
 import { WorkspaceUpdateService } from "./workspaces/workspace-update.service";
 
@@ -64,8 +60,6 @@ import { WorkspaceUpdateService } from "./workspaces/workspace-update.service";
     RoleCreationService,
     RoleUpdateService,
     RoleDeletionService,
-    { provide: InvitationMailer, useClass: NoopInvitationMailer },
-    { provide: WorkspaceDeletionGuard, useClass: NoopWorkspaceDeletionGuard },
   ],
 })
 export class OrganizationModule {}

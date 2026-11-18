@@ -1,8 +1,11 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { Logger } from "@nestjs/common";
 import type { MigrationInterface, QueryRunner } from "typeorm";
 import { assertAdoptableSchema } from "./preflight";
 import { detectSchemaState } from "./schema-state";
+
+const logger = new Logger("Migrations");
 
 /**
  * Adopts a database built by the previous backend without touching it, or
@@ -18,6 +21,7 @@ export class Baseline1793000000000 implements MigrationInterface {
 
     if (state === "current") {
       await assertAdoptableSchema(queryRunner);
+      logger.log("Adopted the existing schema; no tables were changed.");
       return;
     }
 
@@ -25,6 +29,7 @@ export class Baseline1793000000000 implements MigrationInterface {
       await queryRunner.query(
         readFileSync(join(__dirname, "baseline.sql"), "utf8"),
       );
+      logger.log("Created the schema on an empty database.");
       return;
     }
 

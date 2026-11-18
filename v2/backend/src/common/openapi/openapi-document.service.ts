@@ -5,6 +5,7 @@ import {
 import { Injectable } from "@nestjs/common";
 import { PATH_METADATA } from "@nestjs/common/constants";
 import { DiscoveryService, MetadataScanner, Reflector } from "@nestjs/core";
+import { DOCUMENTED_AUTH_PATHS } from "../../auth/openapi/documented-auth-paths";
 import { apiErrorSchema } from "./api-error-schema";
 import { API_ROUTE_KEY, type ApiRouteConfig } from "./route";
 
@@ -106,6 +107,11 @@ export class OpenApiDocumentService {
       security: [{ bearerAuth: [] }],
     });
 
+    document.paths = {
+      ...document.paths,
+      ...(structuredClone(DOCUMENTED_AUTH_PATHS) as typeof document.paths),
+    };
+
     // Every authenticated route sits behind the same global auth guard, so
     // the shared 401 and 429 are added here rather than repeated on each
     // route. Routes that opt out declare `security: []` and are skipped.
@@ -162,7 +168,11 @@ export class OpenApiDocumentService {
           handler,
         );
         if (!config || config.hide) continue;
-        const { hide: _hide, ...route } = config;
+        const {
+          hide: _hide,
+          validationMessage: _validationMessage,
+          ...route
+        } = config;
         registry.registerPath({
           ...route,
           path: joinPath(prefix, route.path),

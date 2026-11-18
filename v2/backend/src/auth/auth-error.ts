@@ -33,6 +33,29 @@ const AUTH_ERRORS = {
     400,
     "Sign-up with disposable email addresses is not allowed.",
   ],
+  INVALID_TOKEN: [400, "Invalid token"],
+  INVALID_OTP: [400, "Invalid OTP"],
+  OTP_EXPIRED: [400, "OTP expired"],
+  TOO_MANY_ATTEMPTS: [403, "Too many attempts"],
+  CAPTCHA_FAILED: [403, "Captcha verification failed."],
+  EMAIL_DELIVERY_NOT_CONFIGURED: [
+    403,
+    "Password reset requires email delivery to be configured.",
+  ],
+  INVALID_ORIGIN: [403, "Invalid origin"],
+  MISSING_OR_NULL_ORIGIN: [403, "Missing or null Origin"],
+  CROSS_SITE_NAVIGATION_LOGIN_BLOCKED: [
+    403,
+    "Cross-site navigation login blocked. This request appears to be a CSRF attack.",
+  ],
+  INVALID_CALLBACK_URL: [403, "Invalid callbackURL"],
+  INVALID_REDIRECT_URL: [403, "Invalid redirectURL"],
+  INVALID_ERROR_CALLBACK_URL: [403, "Invalid errorCallbackURL"],
+  INVALID_NEW_USER_CALLBACK_URL: [403, "Invalid newUserCallbackURL"],
+  ANONYMOUS_USERS_CANNOT_SIGN_IN_AGAIN_ANONYMOUSLY: [
+    400,
+    "Anonymous users cannot sign in again anonymously",
+  ],
 } as const satisfies Record<string, readonly [number, string]>;
 
 export type AuthErrorCode = keyof typeof AUTH_ERRORS;

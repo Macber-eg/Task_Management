@@ -1,0 +1,12 @@
+# Only the manifests, build config and src/ are needed; never send local
+# secrets or build output into the image.
+.env
+.env.*
+!.env.example
+node_modules
+dist
+coverage
+test
+*.log
+Dockerfile
+.dockerignore

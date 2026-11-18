@@ -1,13 +1,9 @@
 import { Module } from "@nestjs/common";
-import { NoopWorkspaceSeatSync } from "./noop-workspace-seat-sync";
 import { WorkspaceMemberLifecycleService } from "./workspace-member-lifecycle.service";
-import { WorkspaceSeatSync } from "./workspace-seat-sync";
 
+// `WorkspaceSeatSync` comes from the global billing module.
 @Module({
-  providers: [
-    WorkspaceMemberLifecycleService,
-    { provide: WorkspaceSeatSync, useClass: NoopWorkspaceSeatSync },
-  ],
+  providers: [WorkspaceMemberLifecycleService],
   exports: [WorkspaceMemberLifecycleService],
 })
 export class WorkspaceMembersModule {}

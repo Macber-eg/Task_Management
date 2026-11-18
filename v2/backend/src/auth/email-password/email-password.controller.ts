@@ -1,15 +1,17 @@
-import { Controller, Req, Res } from "@nestjs/common";
+import { Controller, Req, Res, UseGuards } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { ApiRoute, Input, type RouteInput } from "../../common/openapi";
 import { Public } from "../public.decorator";
 import { CurrentSessionService } from "../sessions/current-session.service";
 import { userOutput } from "../sessions/session-output";
+import { AuthBeforeHooksGuard } from "../sign-in-policy/auth-before-hooks.guard";
 import { signInEmailRoute, signUpEmailRoute } from "./email-password.routes";
 import { SignInService } from "./sign-in.service";
 import { readSignUpInvitation } from "./sign-up-invitation";
 import { SignUpService } from "./sign-up.service";
 
 @Public()
+@UseGuards(AuthBeforeHooksGuard)
 @Controller("auth")
 export class EmailPasswordController {
   constructor(
@@ -28,7 +30,9 @@ export class EmailPasswordController {
       input.json,
       readSignUpInvitation(request, input.json),
     );
-    const issued = await this.current.start(user, request, response);
+    const issued = await this.current.start(user, request, response, {
+      rememberMe: input.json.rememberMe,
+    });
     return { token: issued.accessToken, user: userOutput(issued.user) };
   }
 
@@ -42,7 +46,9 @@ export class EmailPasswordController {
       input.json.email,
       input.json.password,
     );
-    const issued = await this.current.start(user, request, response);
+    const issued = await this.current.start(user, request, response, {
+      rememberMe: input.json.rememberMe,
+    });
     return {
       redirect: false,
       token: issued.accessToken,

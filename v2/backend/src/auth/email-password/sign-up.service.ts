@@ -76,6 +76,9 @@ export class SignUpService {
           emailVerified: false,
           image: input.image ?? null,
           locale: input.locale ?? null,
+          // Every new account gets the instance role `user` (`admin` comes
+          // from the first-user promotion), as with the other sign-up paths.
+          role: "user",
         });
         if (!created) return undefined;
         await insertReturning(manager, AccountEntity, {

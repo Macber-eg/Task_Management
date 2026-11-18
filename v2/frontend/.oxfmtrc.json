@@ -1,0 +1,21 @@
+{
+	"$schema": "./node_modules/oxfmt/configuration_schema.json",
+	"printWidth": 80,
+	"useTabs": false,
+	"sortPackageJson": false,
+	"ignorePatterns": [
+		"**/node_modules/**",
+		"**/coverage/**",
+		"**/dist/**",
+		"**/.tanstack/**",
+		"**/routeTree.gen.ts",
+		"**/openapi.json",
+		"src/api/schema.d.ts",
+		"**/tsconfig*.json",
+		"**/package.json",
+		"**/*.{css,svg,html,md,mdx,yaml,yml}"
+	],
+	"overrides": [
+		{ "files": ["**/*.{json,jsonc}"], "options": { "useTabs": true } }
+	]
+}

@@ -8,8 +8,14 @@ import {
 } from "@nestjs/common";
 import type { z } from "./zod";
 
-/** `hide` keeps a route out of the OpenAPI document. */
-export type ApiRouteConfig = RouteConfig & { hide?: boolean };
+/**
+ * `hide` keeps a route out of the OpenAPI document. `validationMessage`
+ * replaces the message of the route's 400 validation errors.
+ */
+export type ApiRouteConfig = RouteConfig & {
+  hide?: boolean;
+  validationMessage?: string;
+};
 
 export const API_ROUTE_KEY = "api:route";
 

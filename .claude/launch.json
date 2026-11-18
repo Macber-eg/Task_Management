@@ -18,6 +18,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--dir", "v2/backend", "dev"],
       "port": 1338
+    },
+    {
+      "name": "v2-frontend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "v2/frontend", "dev"],
+      "port": 5174
     }
   ]
 }

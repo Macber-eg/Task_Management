@@ -288,7 +288,7 @@ describe("API integration: workspace member endpoints", () => {
     expect(realtime.revokeWorkspaceConnections).toHaveBeenCalledWith(
       byId.member.userId,
       workspaceId,
-      { role: null },
+      { role: "user" },
     );
 
     const removedByEmail = await owner.post(
@@ -365,7 +365,7 @@ describe("API integration: workspace member endpoints", () => {
     expect(realtime.revokeWorkspaceConnections).toHaveBeenCalledWith(
       member.userId,
       workspaceId,
-      { role: null },
+      { role: "user" },
     );
     const [session] = await app.db.findBy(SessionEntity, {
       userId: member.userId,

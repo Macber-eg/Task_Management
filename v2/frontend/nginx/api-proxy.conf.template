@@ -1,0 +1,46 @@
+# Same-origin layout: the API is reached through this server.
+# 40-kaneo-api-proxy.sh fills in __KANEO_API_RESOLVER__ and __KANEO_API_PASS__
+# at startup. Under Docker's embedded DNS the backend name is re-resolved, so
+# a recreated backend container with a new address is still found.
+# `^~` keeps the regex locations (such as the *.map rule) off API paths.
+
+__KANEO_API_RESOLVER__
+
+location ^~ /api/ws/ {
+    proxy_pass __KANEO_API_PASS__;
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    # Clients send a keepalive well inside this; it only bounds dead sockets.
+    proxy_read_timeout 1h;
+    proxy_send_timeout 1h;
+    proxy_buffering off;
+}
+
+location ^~ /api/ {
+    proxy_pass __KANEO_API_PASS__;
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    # Streamed MCP responses must not wait for a full buffer.
+    proxy_buffering off;
+    proxy_read_timeout 5m;
+}
+
+# OAuth discovery for MCP clients is served by the backend at the root too.
+location ^~ /.well-known/ {
+    proxy_pass __KANEO_API_PASS__;
+    proxy_http_version 1.1;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
