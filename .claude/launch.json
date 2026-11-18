@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@kaneo/api", "exec", "tsx", "src/index.ts"],
+      "port": 1337
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@kaneo/web", "dev"],
+      "port": 5173
+    }
+  ]
+}
