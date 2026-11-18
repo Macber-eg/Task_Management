@@ -3079,7 +3079,10 @@
 			"ariaLabel": "自訂欄位"
 		},
 		"board": {
-			"reorderFailed": "無法移動任務，請再試一次。"
+			"reorderFailed": "無法移動任務，請再試一次。",
+			"loadingMoreTasks": "Loading more tasks…",
+			"loadMoreTasksFailed": "More tasks could not be loaded.",
+			"loadMoreTasksRetry": "Retry"
 		},
 		"planning": {
 			"add": "Add",

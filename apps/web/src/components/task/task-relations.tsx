@@ -88,7 +88,10 @@ export default function TaskRelations({
   >("related");
 
   const { data: relations = [] } = useGetTaskRelations(taskId);
-  const { data: projectData } = useGetTasks(projectId);
+  // The task picker searches every task; other sections need only columns.
+  const { data: projectData } = useGetTasks(projectId, {
+    loadAll: commandOpen,
+  });
   const { data: project } = useGetProject({ id: projectId, workspaceId });
   const { data: workspace } = useActiveWorkspace();
   const { data: workspaceUsers } = useGetActiveWorkspaceUsers(

@@ -18,7 +18,12 @@ import {
   SortableContext,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { LoadMoreTasks } from "@/components/board/load-more-tasks";
+import { columnTaskCount } from "@/fetchers/task/board-page-state";
+import { useBoardPageState } from "@/hooks/queries/task/use-board-page-state";
+import { loadCompleteColumns } from "@/lib/board-pages";
 import { AnimatePresence, motion } from "framer-motion";
 import { produce } from "immer";
 import { Archive, ChevronRight, Flag, Plus } from "lucide-react";
@@ -51,6 +56,8 @@ function ListView({
 }: ListViewProps) {
   const { t } = useTranslation();
   const { setProject } = useProjectStore();
+  const queryClient = useQueryClient();
+  const pageState = useBoardPageState(project.id);
   const setAvailableTasks = useBulkSelectionStore(
     (state) => state.setAvailableTasks,
   );
@@ -177,7 +184,30 @@ function ListView({
     const activeTaskId = active.id.toString();
     const overId = over.id.toString();
 
-    const updatedProject = produce(project, (draft) => {
+    // Positions are renumbered across whole columns, so load them completely.
+    const ready = loadCompleteColumns(queryClient, project, [
+      activeTaskId,
+      overId,
+    ]);
+    if (ready === true) return moveTask(project, activeTaskId, overId);
+    void ready.then((loaded) => {
+      if (!loaded) toast.error(t("tasks:board.reorderFailed"));
+      else
+        moveTask(
+          queryClient.getQueryData<ProjectWithTasks>(["tasks", project.id]) ??
+            project,
+          activeTaskId,
+          overId,
+        );
+    });
+  };
+
+  const moveTask = (
+    board: ProjectWithTasks,
+    activeTaskId: string,
+    overId: string,
+  ) => {
+    const updatedProject = produce(board, (draft) => {
       const sourceColumn = draft?.columns?.find((col) =>
         col.tasks.some((task) => task.id === activeTaskId),
       );
@@ -266,7 +296,25 @@ function ListView({
   const handleConfirmArchive = () => {
     if (disableCollectionActions || !archiveColumn?.isFinal) return;
 
-    const updatedProject = produce(project, (draft) => {
+    // Archive the whole column, including pages not scrolled into view yet.
+    const ready = loadCompleteColumns(queryClient, project, [archiveColumn.id]);
+    if (ready === true) return archiveColumnTasks(project);
+    void ready.then((loaded) => {
+      if (!loaded) toast.error(t("tasks:board.loadMoreTasksFailed"));
+      else
+        archiveColumnTasks(
+          queryClient.getQueryData<ProjectWithTasks>(["tasks", project.id]) ??
+            project,
+        );
+    });
+  };
+
+  const archiveColumnTasks = (board: ProjectWithTasks) => {
+    const archivedCount =
+      board.columns.find((col) => col.id === columnToArchive)?.tasks.length ??
+      0;
+
+    const updatedProject = produce(board, (draft) => {
       const archivedColumn = draft?.columns?.find(
         (col) => col.id === columnToArchive,
       );
@@ -283,9 +331,7 @@ function ListView({
     });
 
     setProject(updatedProject);
-    toast.success(
-      t("tasks:archive.success", { count: archiveColumn.tasks.length }),
-    );
+    toast.success(t("tasks:archive.success", { count: archivedCount }));
 
     setIsArchiveModalOpen(false);
     setColumnToArchive(null);
@@ -331,7 +377,10 @@ function ListView({
               <div className="flex items-center gap-1">
                 <span className="mt-1 mr-1">{column.name}</span>
                 <span className="text-xs text-muted-foreground mt-0.5">
-                  {column.tasks.length}
+                  {columnTaskCount(
+                    pageState?.buckets[column.slug],
+                    column.tasks.length,
+                  )}
                 </span>
               </div>
             </div>
@@ -389,6 +438,7 @@ function ListView({
                 ))}
               </AnimatePresence>
             </SortableContext>
+            <LoadMoreTasks projectId={project.id} status={column.slug} />
 
             {column.tasks.length === 0 && (
               <div className="py-6 px-4 text-center text-xs text-muted-foreground">

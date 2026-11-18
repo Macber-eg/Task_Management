@@ -3298,7 +3298,10 @@
 		"descriptionLoading": "Loading description…",
 		"descriptionLoadError": "The description could not be loaded. Retry to load the current version.",
 		"board": {
-			"reorderFailed": "Could not move task. Please try again."
+			"reorderFailed": "Could not move task. Please try again.",
+			"loadingMoreTasks": "Loading more tasks…",
+			"loadMoreTasksFailed": "More tasks could not be loaded.",
+			"loadMoreTasksRetry": "Retry"
 		}
 	},
 	"invitations": {

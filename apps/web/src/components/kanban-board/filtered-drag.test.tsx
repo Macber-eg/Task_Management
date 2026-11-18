@@ -29,7 +29,8 @@ vi.mock("@tanstack/react-query", () => ({
   useQueryClient: () => ({
     setQueryData: mocks.setQueryData,
     invalidateQueries: mocks.invalidateQueries,
-    getQueryData: () => mocks.project,
+    getQueryData: (key: unknown[]) =>
+      key[0] === "tasks-pages" ? undefined : mocks.project,
     getQueryState: () => undefined,
   }),
   useMutation: ({ onSuccess }: { onSuccess: typeof mocks.success }) => {

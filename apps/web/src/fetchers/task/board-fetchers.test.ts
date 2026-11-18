@@ -2,13 +2,15 @@ import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import getPublicProject from "../project/get-public-project";
 import getTasks from "./get-tasks";
 
-const { privateRequest, publicRequest } = vi.hoisted(() => ({
+const { privateRequest, publicRequest, columnsRequest } = vi.hoisted(() => ({
   privateRequest: vi.fn(),
   publicRequest: vi.fn(),
+  columnsRequest: vi.fn(),
 }));
 vi.mock("@kaneo/libs", () => ({
   client: {
     task: { tasks: { ":projectId": { $get: privateRequest } } },
+    column: { ":projectId": { $get: columnsRequest } },
     "public-project": { ":id": { $get: publicRequest } },
   },
 }));
@@ -46,6 +48,10 @@ function data(page: number) {
 beforeEach(() => {
   privateRequest.mockReset();
   publicRequest.mockReset();
+  columnsRequest.mockReset();
+  columnsRequest.mockImplementation(async () =>
+    Response.json([{ id: "todo", slug: "todo", position: 0 }]),
+  );
 });
 describe("authenticated and public board fetchers", () => {
   it.each(["private", "public"])(
@@ -64,9 +70,24 @@ describe("authenticated and public board fetchers", () => {
         },
       );
       const controller = new AbortController();
+      // A private board refreshes the pages each column had loaded before.
+      const onPageState = vi.fn();
       const result =
         visibility === "private"
-          ? await getTasks("project", controller.signal)
+          ? await getTasks("project", controller.signal, undefined, {
+              pageState: {
+                generation: 1,
+                buckets: {
+                  todo: {
+                    loadedPages: 3,
+                    totalPages: 3,
+                    total: 201,
+                    loadedCount: 3,
+                  },
+                },
+              },
+              onPageState,
+            })
           : await getPublicProject({ id: "project" }, controller.signal);
       expect(result.columns[0].tasks.map((task) => task.id)).toEqual([
         "task-1",
@@ -81,12 +102,56 @@ describe("authenticated and public board fetchers", () => {
               visibility === "private"
                 ? { projectId: "project" }
                 : { id: "project" },
-            query: { page: String(index + 1), limit: "100" },
+            query:
+              visibility === "private"
+                ? { page: String(index + 1), limit: "50", status: "todo" }
+                : { page: String(index + 1), limit: "100" },
           },
           { init: { signal: controller.signal } },
         ]);
+      if (visibility === "private")
+        expect(onPageState).toHaveBeenCalledWith({
+          todo: { loadedPages: 3, totalPages: 3, total: 201, loadedCount: 3 },
+        });
     },
   );
+  it("loads only the first page of each column on a first visit", async () => {
+    columnsRequest.mockImplementation(async () =>
+      Response.json([
+        { id: "todo", slug: "todo", position: 0 },
+        { id: "done", slug: "done", position: 1 },
+      ]),
+    );
+    privateRequest.mockImplementation(
+      async ({ query }: { query: { page: string; status: string } }) => {
+        const board = data(Number(query.page));
+        board.columns.push({ ...board.columns[0], id: "done", slug: "done" });
+        board.columns = board.columns.map((column) => ({
+          ...column,
+          tasks:
+            column.slug === query.status
+              ? [{ ...column.tasks[0], id: `${query.status}-${query.page}` }]
+              : [],
+        }));
+        return Response.json({
+          data: board,
+          pagination: { page: 1, pageSize: 50, total: 120, totalPages: 3 },
+        });
+      },
+    );
+    const onPageState = vi.fn();
+    const result = await getTasks("project", undefined, undefined, {
+      onPageState,
+    });
+    expect(
+      result.columns.map((column) => column.tasks.map((task) => task.id)),
+    ).toEqual([["todo-1"], ["done-1"]]);
+    expect(privateRequest).toHaveBeenCalledTimes(2);
+    expect(onPageState).toHaveBeenCalledWith({
+      todo: { loadedPages: 1, totalPages: 3, total: 120, loadedCount: 1 },
+      done: { loadedPages: 1, totalPages: 3, total: 120, loadedCount: 1 },
+    });
+  });
   it.each(["private", "public"])(
     "sends relatedPage for %s continuations and merges their labels",
     async (visibility) => {
@@ -120,7 +185,7 @@ describe("authenticated and public board fetchers", () => {
       expect(request.mock.calls[1][0].query).toMatchObject({
         page: "1",
         relatedPage: "2",
-        limit: "100",
+        limit: visibility === "private" ? "50" : "100",
       });
     },
   );

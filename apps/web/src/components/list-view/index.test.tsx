@@ -6,9 +6,19 @@ import {
   screen,
 } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vite-plus/test";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode as QueryWrapperChildren } from "react";
 import type { DragEndEvent } from "@dnd-kit/core";
 import type { ProjectWithTasks } from "@/types/project";
 import ListView from "./index";
+function QueryWrapper({ children }: { children: QueryWrapperChildren }) {
+  return (
+    <QueryClientProvider client={new QueryClient()}>
+      {children}
+    </QueryClientProvider>
+  );
+}
+
 const m = vi.hoisted(() => ({
   props: {} as {
     sensors?: unknown[];
@@ -70,7 +80,9 @@ it("disables keyboard sensors and rejects drag completion on a partial board", (
     plannedTasks: [],
     archivedTasks: [],
   } as unknown as ProjectWithTasks;
-  const { rerender } = render(<ListView project={project} />);
+  const { rerender } = render(<ListView project={project} />, {
+    wrapper: QueryWrapper,
+  });
   expect(m.props.sensors?.length).toBeGreaterThan(0);
   rerender(<ListView project={project} disableDragDrop />);
   expect(m.props.sensors).toEqual([]);
@@ -99,7 +111,9 @@ it("blocks archive-all during pagination or errors, including an already-open co
     plannedTasks: [],
     archivedTasks: [],
   } as unknown as ProjectWithTasks;
-  const { rerender } = render(<ListView project={project} />);
+  const { rerender } = render(<ListView project={project} />, {
+    wrapper: QueryWrapper,
+  });
   fireEvent.click(screen.getByTitle(/archiveAllTooltip/));
   const complete = {
     ...project,

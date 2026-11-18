@@ -27,7 +27,8 @@ import { boardCollisionDetection } from "./board-collision-detection";
 import { findTaskColumn } from "./drag-preview/find-task-column";
 import { moveBoardTask } from "./move-task";
 import { useDragPreview } from "./drag-preview/use-drag-preview";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { loadCompleteColumns } from "@/lib/board-pages";
 import { useRegisterShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useProjectBackground } from "@/hooks/use-project-background";
 import { cn } from "@/lib/cn";
@@ -67,6 +68,8 @@ function KanbanBoard({
   const [activeIsFinal, setActiveIsFinal] = useState<boolean | undefined>();
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
   const [sortHintColumnId, setSortHintColumnId] = useState<string | null>(null);
+  // Set while a drop waits for the rest of its columns to load.
+  const dropLoading = useRef(false);
   const dragPreview = useDragPreview(project);
   const { t } = useTranslation();
   const { mutate: reorder, isPending: isReordering } = useMutation({
@@ -207,6 +210,7 @@ function KanbanBoard({
   const isDropBlocked = () =>
     disableDragDrop ||
     isReordering ||
+    dropLoading.current ||
     queryClient.getQueryState(["tasks", project.id])?.fetchStatus ===
       "fetching";
 
@@ -225,7 +229,7 @@ function KanbanBoard({
     );
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     const activeId = active.id.toString();
     const overId = over?.id.toString();
@@ -235,6 +239,21 @@ function KanbanBoard({
     resetDrag();
 
     if (!overId || !project?.columns || isDropBlocked()) return;
+    const ready = loadCompleteColumns(queryClient, project, [
+      activeId,
+      placement?.overId ?? overId,
+    ]);
+    if (ready !== true) {
+      dropLoading.current = true;
+      const loaded = await ready.finally(() => {
+        dropLoading.current = false;
+      });
+      if (!loaded) {
+        toast.error(t("tasks:board.reorderFailed"));
+        return;
+      }
+      if (isDropBlocked()) return;
+    }
     const canonical = selectReorderBoard(
       project.id,
       activeId,

@@ -4,6 +4,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { LoadMoreTasks } from "@/components/board/load-more-tasks";
+import useProjectStore from "@/store/project";
 import type { ProjectWithTasks } from "@/types/project";
 import TaskCard from "../task-card";
 
@@ -23,6 +25,7 @@ export function ColumnDropzone({
   disableSorting = false,
 }: ColumnDropzoneProps) {
   const reduceMotion = useReducedMotion();
+  const projectId = useProjectStore((state) => state.project?.id);
   const hidden = reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 };
 
   return (
@@ -48,6 +51,9 @@ export function ColumnDropzone({
             </motion.div>
           ))}
         </AnimatePresence>
+        {projectId ? (
+          <LoadMoreTasks projectId={projectId} status={column.slug} />
+        ) : null}
       </div>
     </SortableContext>
   );

@@ -17,6 +17,7 @@ import useGetCustomFieldFilterValues from "@/hooks/queries/custom-field/use-get-
 import useGetCustomFieldsByProject from "@/hooks/queries/custom-field/use-get-custom-fields-by-project";
 import useGetLabelsByWorkspace from "@/hooks/queries/label/use-get-labels-by-workspace";
 import { useDescriptionMatches } from "@/hooks/queries/task/use-description-matches";
+import { useCompleteBoard } from "@/hooks/queries/task/use-complete-board";
 import { useGetTasks } from "@/hooks/queries/task/use-get-tasks";
 import { useGetActiveWorkspaceUsers } from "@/hooks/queries/workspace-users/use-get-active-workspace-users";
 import { useBoardSort } from "@/hooks/use-board-sort";
@@ -221,6 +222,21 @@ function RouteComponent() {
     descriptionSearch.ids,
   );
 
+  // Columns load page by page as they scroll. Filtering, searching, sorting
+  // and scoping run on the client, so they need every task loaded first.
+  const completion = useCompleteBoard(
+    projectId,
+    data,
+    hasActiveFilters ||
+      !!boardSearchQuery.trim() ||
+      sort.field !== "position" ||
+      !!sprintId ||
+      !!phaseId,
+    boardFetching,
+  );
+  const boardBusy = boardFetching || completion.loading;
+  const boardFailed = boardError || completion.failed;
+
   const scopedProject = useMemo(() => {
     if (!filteredProject) return filteredProject;
     if (!sprintId && !phaseId) return filteredProject;
@@ -334,7 +350,7 @@ function RouteComponent() {
           </p>
         )}
 
-        {boardError && (
+        {boardFailed && (
           <p role="alert" className="p-4 text-destructive">
             {t("tasks:calendar.loadError")}{" "}
             <button
@@ -355,10 +371,10 @@ function RouteComponent() {
             viewMode === "board" ? (
               <KanbanBoard
                 project={sortedProject}
-                disableCollectionActions={boardFetching || boardError}
+                disableCollectionActions={boardBusy || boardFailed}
                 disableDragDrop={
-                  boardFetching ||
-                  boardError ||
+                  boardBusy ||
+                  boardFailed ||
                   (sort.field !== "position" &&
                     sort.field !== "number" &&
                     sort.field !== "priority")
@@ -369,13 +385,13 @@ function RouteComponent() {
             ) : (
               <ListView
                 project={sortedProject}
-                disableCollectionActions={boardFetching || boardError}
+                disableCollectionActions={boardBusy || boardFailed}
                 disableDragDrop={
-                  boardFetching || boardError || sort.field !== "position"
+                  boardBusy || boardFailed || sort.field !== "position"
                 }
               />
             )
-          ) : boardError ? null : (
+          ) : boardFailed ? null : (
             <BoardSkeleton />
           )}
         </div>

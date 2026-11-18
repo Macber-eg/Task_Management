@@ -1,9 +1,21 @@
 import { useState } from "react";
 import { markBoardCacheChanged } from "@/lib/board-cache-version";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  type BoardPageState,
+  boardPageStateKey,
+} from "@/fetchers/task/board-page-state";
 import getTasks from "@/fetchers/task/get-tasks";
+import { useCompleteBoard } from "./use-complete-board";
 
-export function useGetTasks(projectId: string) {
+/**
+ * A project's board. Columns load page by page as they scroll; pass `loadAll`
+ * when the caller needs every task, such as filters or the backlog.
+ */
+export function useGetTasks(
+  projectId: string,
+  { loadAll = false }: { loadAll?: boolean } = {},
+) {
   const queryClient = useQueryClient();
   const [progress, setProgress] =
     useState<Awaited<ReturnType<typeof getTasks>>>();
@@ -49,10 +61,32 @@ export function useGetTasks(projectId: string) {
               }
             }
           });
+      const pageStateKey = boardPageStateKey(projectId);
+      const pageState = queryClient.getQueryData<BoardPageState>(pageStateKey);
+      // A new generation drops page loads that started before this refresh.
+      const generation = (pageState?.generation ?? 0) + 1;
+      queryClient.setQueryData<BoardPageState>(pageStateKey, {
+        generation,
+        buckets: pageState?.buckets ?? {},
+      });
       try {
-        return await getTasks(projectId, signal, (board) => {
-          if (!hasCachedBoard) setProgress(board);
-        });
+        return await getTasks(
+          projectId,
+          signal,
+          (board) => {
+            if (!hasCachedBoard) setProgress(board);
+          },
+          {
+            pageState,
+            onPageState: (buckets) => {
+              if (!signal.aborted)
+                queryClient.setQueryData<BoardPageState>(pageStateKey, {
+                  generation,
+                  buckets,
+                });
+            },
+          },
+        );
       } catch (error) {
         unsubscribe();
         throw error;
@@ -64,8 +98,17 @@ export function useGetTasks(projectId: string) {
     refetchOnWindowFocus: true,
     enabled: !!projectId,
   });
+  const data = query.data ?? (query.isFetching ? progress : undefined);
+  const completion = useCompleteBoard(
+    projectId,
+    query.data,
+    loadAll,
+    query.isFetching,
+  );
   return {
     ...query,
-    data: query.data ?? (query.isFetching ? progress : undefined),
+    data,
+    isFetching: query.isFetching || completion.loading,
+    isError: query.isError || completion.failed,
   };
 }

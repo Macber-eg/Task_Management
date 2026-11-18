@@ -3261,7 +3261,10 @@
 			"ariaLabel": "Custom fields"
 		},
 		"board": {
-			"reorderFailed": "Could not move task. Please try again."
+			"reorderFailed": "Could not move task. Please try again.",
+			"loadingMoreTasks": "Loading more tasks…",
+			"loadMoreTasksFailed": "More tasks could not be loaded.",
+			"loadMoreTasksRetry": "Retry"
 		},
 		"planning": {
 			"add": "Add",

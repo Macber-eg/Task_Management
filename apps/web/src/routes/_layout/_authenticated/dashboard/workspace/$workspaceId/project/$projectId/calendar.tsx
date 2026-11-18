@@ -39,7 +39,13 @@ function RouteComponent() {
   const { projectId, workspaceId } = Route.useParams();
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
-  const { data: project, isLoading, isError } = useGetTasks(projectId);
+  const {
+    data: project,
+    isLoading,
+    isError,
+  } = useGetTasks(projectId, {
+    loadAll: true,
+  });
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const setViewMode = useUserPreferencesStore((state) => state.setViewMode);
   const isMobile = useIsMobile();

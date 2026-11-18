@@ -6,8 +6,18 @@ import {
   screen,
 } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vite-plus/test";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode as QueryWrapperChildren } from "react";
 import type { ProjectWithTasks } from "@/types/project";
 import { ColumnHeader } from "./column-header";
+function QueryWrapper({ children }: { children: QueryWrapperChildren }) {
+  return (
+    <QueryClientProvider client={new QueryClient()}>
+      {children}
+    </QueryClientProvider>
+  );
+}
+
 const m = vi.hoisted(() => ({
   project: undefined as ProjectWithTasks | undefined,
   archive: {} as {
@@ -52,7 +62,9 @@ it("prevents archive confirmation while the board is partial and uses the comple
     tasks: [{ id: "a" }],
   } as unknown as ProjectWithTasks["columns"][number];
   m.project = { id: "p", columns: [column] } as ProjectWithTasks;
-  const { rerender } = render(<ColumnHeader column={column} />);
+  const { rerender } = render(<ColumnHeader column={column} />, {
+    wrapper: QueryWrapper,
+  });
   fireEvent.click(screen.getByTitle(/archiveAllTooltip/));
   rerender(<ColumnHeader column={column} disableCollectionActions />);
   expect(screen.getByTitle(/archiveAllTooltip/).hasAttribute("disabled")).toBe(

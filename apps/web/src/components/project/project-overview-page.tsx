@@ -72,7 +72,7 @@ export default function ProjectOverviewPage({
   const { data: project } = useGetProject({ id: projectId, workspaceId });
   const { data: phases = [] } = useGetPhases(projectId, true);
   const { data: sprints = [] } = useGetSprints(projectId, true);
-  const { data: board } = useGetTasks(projectId);
+  const { data: board } = useGetTasks(projectId, { loadAll: true });
   const { data: columns = [] } = useGetColumns(projectId);
 
   const { data: recent = [] } = useQuery({

@@ -1,7 +1,17 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ComponentType, ReactNode } from "react";
 import { afterEach, expect, it, vi } from "vite-plus/test";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactNode as QueryWrapperChildren } from "react";
 import { Route } from "./board";
+function QueryWrapper({ children }: { children: QueryWrapperChildren }) {
+  return (
+    <QueryClientProvider client={new QueryClient()}>
+      {children}
+    </QueryClientProvider>
+  );
+}
+
 const m = vi.hoisted(() => ({
   project: {
     id: "p",
@@ -95,7 +105,7 @@ afterEach(cleanup);
 it("keeps cached tasks readable and disables reordering when a refresh fails", () => {
   const Component = (Route as unknown as { component: ComponentType })
     .component;
-  render(<Component />);
+  render(<Component />, { wrapper: QueryWrapper });
   expect(screen.getByText("Cached task")).toBeDefined();
   expect(
     screen.getByLabelText("Cached board").getAttribute("data-drag-disabled"),

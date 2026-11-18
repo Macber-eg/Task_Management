@@ -45,7 +45,7 @@ function RouteComponent() {
   const { projectId, workspaceId } = Route.useParams();
   const { taskId } = Route.useSearch();
   const navigate = useNavigate();
-  const { data: project } = useGetTasks(projectId);
+  const { data: project } = useGetTasks(projectId, { loadAll: true });
   const weekStartsOn = useUserPreferencesStore((state) => state.weekStartsOn);
   const [searchQuery, setSearchQuery] = useState("");
   const [windowStart, setWindowStart] = useState<{
